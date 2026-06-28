@@ -1,87 +1,57 @@
 <!DOCTYPE html>
-<html>
+<html lang="id">
 <head>
-    <title>Web Monz</title>
+    <meta charset="UTF-8">
+    <title>Web Monz | Pro Control</title>
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
     <style>
-        body { 
-            background: #1a1a1a; 
-            color: #eee; 
-            font-family: sans-serif; 
-            padding: 20px; 
-            display: flex; 
-            justify-content: center; 
-        }
-        .main-wrapper { 
-            width: 100%; 
-            max-width: 450px; 
-        }
-        h3 { margin-bottom: 20px; font-weight: 300; letter-spacing: 1px; }
-        input { 
-            width: 100%; 
-            padding: 12px; 
-            margin: 8px 0; 
-            background: #2a2a2a; 
-            border: none; 
-            border-bottom: 2px solid #444; 
-            color: white; 
-            outline: none; 
-            transition: 0.3s;
-        }
-        input:focus { border-bottom: 2px solid #007bff; }
-        button { 
-            width: 100%; 
-            padding: 12px; 
-            margin-top: 10px; 
-            background: #333; 
-            color: white; 
-            border: none; 
-            cursor: pointer; 
-            transition: 0.3s;
-        }
-        button:hover { background: #444; }
-        #logBox { 
-            margin-top: 20px; 
-            padding: 10px; 
-            background: #000; 
-            color: #0f0; 
-            font-family: monospace; 
-            height: 120px; 
-            overflow-y: auto; 
-            font-size: 11px; 
-            border-left: 3px solid #0f0;
-        }
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap');
+        body { background: linear-gradient(135deg, #0f0c29, #302b63, #24243e); color: #eee; font-family: 'Outfit', sans-serif; margin: 0; min-height: 100vh; display: flex; justify-content: center; align-items: center; }
+        .card { width: 90%; max-width: 400px; background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(15px); padding: 30px; border-radius: 25px; border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 8px 32px rgba(0,0,0,0.5); }
+        h3 { font-weight: 600; text-align: center; margin-bottom: 25px; color: #fff; }
+        input { width: 100%; padding: 14px; margin: 10px 0; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; color: white; outline: none; box-sizing: border-box; }
+        button { width: 100%; padding: 14px; margin-top: 10px; background: linear-gradient(45deg, #6a11cb, #2575fc); color: white; border: none; border-radius: 12px; cursor: pointer; font-weight: 600; transition: 0.4s; }
+        button:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(37, 117, 252, 0.4); }
+        #logBox { margin-top: 20px; padding: 15px; background: #000; color: #00ff41; font-family: monospace; height: 120px; overflow-y: auto; font-size: 11px; border-radius: 12px; border: 1px solid #333; }
+        #errorMsg { color: #ff4757; font-size: 12px; margin-top: 12px; text-align: center; font-weight: 400; min-height: 18px; }
     </style>
 </head>
 <body>
 
-<div class="main-wrapper">
+<div class="card">
+    <!-- Halaman Login -->
     <div id="login">
         <h3>Login Access</h3>
         <input type="text" id="u" placeholder="Username">
         <input type="password" id="p" placeholder="Password">
         <button onclick="auth()">MASUK</button>
+        <!-- Tempat Pesan Error di Layar -->
+        <div id="errorMsg"></div>
     </div>
 
+    <!-- Halaman Dashboard -->
     <div id="panel" style="display:none;">
         <h3>Bot Controller</h3>
         <input type="text" id="no" placeholder="Nomor WA (628...)">
-        <button onclick="pair()">PAIRING CODE</button>
-        <div id="res" style="padding:10px 0; color:#ffcc00;">CODE: -</div>
+        <button onclick="pair()">REQUEST PAIRING</button>
+        <div id="res" style="padding:15px 0; text-align:center; color:#ffcc00; font-weight:bold;">CODE: -</div>
         
         <input type="text" id="target" placeholder="Nomor Tujuan">
         <input type="text" id="pesan" placeholder="Isi Pesan">
-        <button onclick="kirim()">KIRIM PESAN</button>
+        <button onclick="kirim()">SEND MESSAGE</button>
         
-        <div id="logBox">Terminal system ready...</div>
+        <div id="logBox">> System ready...</div>
     </div>
 </div>
 
 <script>
-    // GANTI LINK INI SESUAI CLOUDFLARE TERBARU
-    const URL = "http://localhost:3000/"; 
-    const socket = io(URL);
+    // --- SETTING PENTING ---
+    const SERVER_URL = "http://localhost:3000/"; // GANTI DENGAN LINK CLOUDFLARE TERBARU
+    const FIREBASE_URL = "https://web-monz-default-rtdb.asia-southeast1.firebasedatabase.app/users.json"; // LINK DATABASE FIREBASE KAMU
+    
+    const socket = io(SERVER_URL);
 
+    // Live Log Terminal
     socket.on('log', (msg) => {
         let div = document.createElement('div');
         div.textContent = "> " + msg;
@@ -90,22 +60,46 @@
         lb.scrollTop = lb.scrollHeight;
     });
 
-    function auth() {
-        document.getElementById('login').style.display = 'none';
-        document.getElementById('panel').style.display = 'block';
+    // Login dengan Validasi Error di Layar Menu
+    async function auth() {
+        const u = document.getElementById('u').value;
+        const p = document.getElementById('p').value;
+        const errorDiv = document.getElementById('errorMsg');
+        
+        errorDiv.style.color = "#ffcc00";
+        errorDiv.innerText = "Memverifikasi...";
+
+        try {
+            let res = await fetch(FIREBASE_URL);
+            let users = await res.json();
+            
+            if (users && users[u] && users[u].password === p) {
+                errorDiv.innerText = ""; // Bersihkan text
+                document.getElementById('login').style.display = 'none';
+                document.getElementById('panel').style.display = 'block';
+            } else {
+                errorDiv.style.color = "#ff4757";
+                errorDiv.innerText = "Username atau Password Salah!";
+            }
+        } catch (e) {
+            errorDiv.style.color = "#ff4757";
+            errorDiv.innerText = "Gagal terhubung ke database.";
+        }
     }
 
+    // Pairing
     async function pair() {
         let n = document.getElementById('no').value;
-        let r = await fetch(URL+'/pairing', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({nomor:n})});
+        let r = await fetch(SERVER_URL+'/pairing', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({nomor:n})});
         let d = await r.json();
         document.getElementById('res').innerText = "CODE: " + d.code;
     }
 
+    // Kirim Pesan
     async function kirim() {
         let n = document.getElementById('target').value;
         let p = document.getElementById('pesan').value;
-        await fetch(URL+'/send', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({nomor:n, pesan:p})});
+        await fetch(SERVER_URL+'/send', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({nomor:n, pesan:p})});
         alert("Pesan berhasil dikirim!");
     }
 </script>
