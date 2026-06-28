@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Monz - Control Panel</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+        body { background: url('https://cdn.phototourl.com/free/2026-06-27-6a6abf78-5e7c-4da4-a543-6cddb9e4706a.jpg') no-repeat center center fixed; background-size: cover; min-height: 100vh; display: flex; justify-content: center; align-items: center; color: white; padding: 20px; }
+        .container { width: 100%; max-width: 400px; padding: 25px; background: rgba(0,0,0,0.6); backdrop-filter: blur(10px); border-radius: 20px; text-align: center; border: 1px solid rgba(255,255,255,0.1); }
+        .logo-top { width: 80px; height: 80px; border-radius: 50%; margin-bottom: 15px; border: 2px solid #fff; }
+        .input-group { position: relative; margin-bottom: 15px; }
+        .input-group input { width: 100%; padding: 12px 12px 12px 40px; border-radius: 10px; border: none; outline: none; }
+        .auth-btn { width: 100%; padding: 12px; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; margin-top: 5px; }
+        #termuxLog { background: #000; color: #0f0; padding: 10px; border-radius: 8px; font-family: monospace; font-size: 10px; height: 120px; overflow-y: auto; text-align: left; margin-top: 15px; border: 1px solid #333; }
+        #mainWeb, #notif { display: none; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- Login Page -->
+        <div id="loginPage">
+            <img src="https://cdn.phototourl.com/free/2026-06-27-adaed56d-30ce-42e0-b035-1512a456bb6b.jpg" class="logo-top">
+            <h3>Login Web Monz</h3>
+            <div class="input-group"><input type="text" id="loginUser" placeholder="Username"></div>
+            <div class="input-group"><input type="password" id="loginPass" placeholder="Password"></div>
+            <button class="auth-btn" style="background:#1abc9c;" onclick="prosesLogin()">Masuk</button>
+        </div>
+
+        <!-- Dashboard -->
+        <div id="mainWeb">
+            <h3>Control Panel</h3>
+            <div class="input-group"><input type="text" id="noTarget" placeholder="Nomor (628...)"></div>
+            <div class="input-group"><input type="text" id="pesan" placeholder="Pesan"></div>
+            <button class="auth-btn" style="background:#007bff;" onclick="kirimPesan()">Kirim Pesan</button>
+            
+            <p style="font-size:10px; margin-top:15px; opacity:0.7;">Live Terminal Termux:</p>
+            <div id="termuxLog">Memuat koneksi log...</div>
+            <button class="auth-btn" style="background:#e74c3c; margin-top:10px;" onclick="location.reload()">Logout</button>
+        </div>
+        <div id="notif" class="notif"></div>
+    </div>
+
+    <script>
+        const SERVER_URL = "https://LINK-SERVER-KAMU.trycloudflare.com"; // GANTI INI
+        const socket = io(SERVER_URL);
+
+        // Live Log Terminal
+        socket.on('log', (msg) => {
+            const div = document.createElement('div');
+            div.textContent = "> " + msg;
+            const logBox = document.getElementById('termuxLog');
+            logBox.appendChild(div);
+            logBox.scrollTop = logBox.scrollHeight;
+        });
+
+        function prosesLogin() {
+            // ... (Fungsi login Firebase sama seperti sebelumnya)
+            localStorage.setItem('monz_sedang_login', 'true');
+            location.reload();
+        }
+
+        async function kirimPesan() {
+            const no = document.getElementById('noTarget').value;
+            const text = document.getElementById('pesan').value;
+            await fetch(`${SERVER_URL}/send`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ nomor: no, pesan: text })
+            });
+            alert("Pesan Terkirim!");
+        }
+
+        window.onload = () => {
+            if(localStorage.getItem('monz_sedang_login') === 'true') {
+                document.getElementById('loginPage').style.display = 'none';
+                document.getElementById('mainWeb').style.display = 'block';
+            }
+        };
+    </script>
+</body>
+</html>
