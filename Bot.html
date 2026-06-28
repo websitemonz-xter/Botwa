@@ -1,56 +1,61 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Web Monz</title>
+    <title>Bot Control</title>
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
     <style>
-        body { background: #111; color: white; font-family: sans-serif; display: flex; justify-content: center; padding: 20px; }
-        .card { width: 100%; max-width: 400px; background: #222; padding: 20px; border-radius: 15px; }
-        input, button { width: 100%; padding: 10px; margin: 5px 0; border-radius: 5px; border: none; }
-        #logBox { background: #000; color: #0f0; font-family: monospace; height: 100px; overflow-y: auto; padding: 10px; font-size: 10px; }
+        body { background: #121212; color: #ccc; font-family: monospace; padding: 10px; }
+        input, button { display: block; width: 100%; margin: 5px 0; padding: 8px; background: #222; color: #fff; border: 1px solid #444; }
+        #logBox { border: 1px solid #444; height: 150px; overflow: scroll; padding: 5px; font-size: 12px; }
     </style>
 </head>
 <body>
-    <div class="card">
-        <h3>Control Panel</h3>
-        <input type="text" id="noHp" placeholder="No WA (628...)">
-        <button onclick="pairing()">Get Pairing Code</button>
-        <div id="code" style="color:yellow; font-size:20px;">-</div>
-        <input type="text" id="target" placeholder="Target WA">
-        <input type="text" id="msg" placeholder="Pesan">
-        <button onclick="send()">Kirim</button>
+
+    <div id="login">
+        <h3>Login</h3>
+        <input type="text" id="u" placeholder="User">
+        <input type="password" id="p" placeholder="Pass">
+        <button onclick="auth()">MASUK</button>
+    </div>
+
+    <div id="panel" style="display:none;">
+        <h3>Panel</h3>
+        <input type="text" id="no" placeholder="No WA">
+        <button onclick="pair()">PAIRING</button>
+        <div id="res">CODE: -</div>
+        <hr>
+        <input type="text" id="target" placeholder="Target">
+        <input type="text" id="pesan" placeholder="Pesan">
+        <button onclick="kirim()">KIRIM</button>
         <div id="logBox"></div>
     </div>
 
     <script>
-        // GANTI LINK INI SETIAP KALI JALANKAN CLOUDFLARE
-        const SERVER_URL = "http://localhost:3000/"; 
-        
-        const socket = io(SERVER_URL, { transports: ['websocket'] });
+        // GANTI LINK INI SESUAI CLOUDFLARE TERBARU
+        const URL = "http://localhost:3000/"; 
+        const socket = io(URL);
 
         socket.on('log', (msg) => {
-            const div = document.createElement('div');
-            div.textContent = "> " + msg;
-            document.getElementById('logBox').appendChild(div);
+            document.getElementById('logBox').innerHTML += `<div>${msg}</div>`;
         });
 
-        async function pairing() {
-            const res = await fetch(`${SERVER_URL}/pairing`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ nomor: document.getElementById('noHp').value })
-            });
-            const data = await res.json();
-            document.getElementById('code').innerText = data.code;
+        function auth() {
+            document.getElementById('login').style.display = 'none';
+            document.getElementById('panel').style.display = 'block';
         }
 
-        async function send() {
-            await fetch(`${SERVER_URL}/send`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ nomor: document.getElementById('target').value, pesan: document.getElementById('msg').value })
-            });
-            alert("Terkirim!");
+        async function pair() {
+            let n = document.getElementById('no').value;
+            let r = await fetch(URL+'/pairing', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({nomor:n})});
+            let d = await r.json();
+            document.getElementById('res').innerText = "CODE: " + d.code;
+        }
+
+        async function kirim() {
+            let n = document.getElementById('target').value;
+            let p = document.getElementById('pesan').value;
+            await fetch(URL+'/send', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({nomor:n, pesan:p})});
+            alert("Terkirim");
         }
     </script>
 </body>
