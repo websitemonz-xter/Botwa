@@ -1,62 +1,113 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Bot Control</title>
+    <title>Web Monz</title>
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
     <style>
-        body { background: #121212; color: #ccc; font-family: monospace; padding: 10px; }
-        input, button { display: block; width: 100%; margin: 5px 0; padding: 8px; background: #222; color: #fff; border: 1px solid #444; }
-        #logBox { border: 1px solid #444; height: 150px; overflow: scroll; padding: 5px; font-size: 12px; }
+        body { 
+            background: #1a1a1a; 
+            color: #eee; 
+            font-family: sans-serif; 
+            padding: 20px; 
+            display: flex; 
+            justify-content: center; 
+        }
+        .main-wrapper { 
+            width: 100%; 
+            max-width: 450px; 
+        }
+        h3 { margin-bottom: 20px; font-weight: 300; letter-spacing: 1px; }
+        input { 
+            width: 100%; 
+            padding: 12px; 
+            margin: 8px 0; 
+            background: #2a2a2a; 
+            border: none; 
+            border-bottom: 2px solid #444; 
+            color: white; 
+            outline: none; 
+            transition: 0.3s;
+        }
+        input:focus { border-bottom: 2px solid #007bff; }
+        button { 
+            width: 100%; 
+            padding: 12px; 
+            margin-top: 10px; 
+            background: #333; 
+            color: white; 
+            border: none; 
+            cursor: pointer; 
+            transition: 0.3s;
+        }
+        button:hover { background: #444; }
+        #logBox { 
+            margin-top: 20px; 
+            padding: 10px; 
+            background: #000; 
+            color: #0f0; 
+            font-family: monospace; 
+            height: 120px; 
+            overflow-y: auto; 
+            font-size: 11px; 
+            border-left: 3px solid #0f0;
+        }
     </style>
 </head>
 <body>
 
+<div class="main-wrapper">
     <div id="login">
-        <h3>Login</h3>
-        <input type="text" id="u" placeholder="User">
-        <input type="password" id="p" placeholder="Pass">
+        <h3>Login Access</h3>
+        <input type="text" id="u" placeholder="Username">
+        <input type="password" id="p" placeholder="Password">
         <button onclick="auth()">MASUK</button>
     </div>
 
     <div id="panel" style="display:none;">
-        <h3>Panel</h3>
-        <input type="text" id="no" placeholder="No WA">
-        <button onclick="pair()">PAIRING</button>
-        <div id="res">CODE: -</div>
-        <hr>
-        <input type="text" id="target" placeholder="Target">
-        <input type="text" id="pesan" placeholder="Pesan">
-        <button onclick="kirim()">KIRIM</button>
-        <div id="logBox"></div>
+        <h3>Bot Controller</h3>
+        <input type="text" id="no" placeholder="Nomor WA (628...)">
+        <button onclick="pair()">PAIRING CODE</button>
+        <div id="res" style="padding:10px 0; color:#ffcc00;">CODE: -</div>
+        
+        <input type="text" id="target" placeholder="Nomor Tujuan">
+        <input type="text" id="pesan" placeholder="Isi Pesan">
+        <button onclick="kirim()">KIRIM PESAN</button>
+        
+        <div id="logBox">Terminal system ready...</div>
     </div>
+</div>
 
-    <script>
-        // GANTI LINK INI SESUAI CLOUDFLARE TERBARU
-        const URL = "http://localhost:3000/"; 
-        const socket = io(URL);
+<script>
+    // GANTI LINK INI SESUAI CLOUDFLARE TERBARU
+    const URL = "https://xxxx.trycloudflare.com"; 
+    const socket = io(URL);
 
-        socket.on('log', (msg) => {
-            document.getElementById('logBox').innerHTML += `<div>${msg}</div>`;
-        });
+    socket.on('log', (msg) => {
+        let div = document.createElement('div');
+        div.textContent = "> " + msg;
+        let lb = document.getElementById('logBox');
+        lb.appendChild(div);
+        lb.scrollTop = lb.scrollHeight;
+    });
 
-        function auth() {
-            document.getElementById('login').style.display = 'none';
-            document.getElementById('panel').style.display = 'block';
-        }
+    function auth() {
+        document.getElementById('login').style.display = 'none';
+        document.getElementById('panel').style.display = 'block';
+    }
 
-        async function pair() {
-            let n = document.getElementById('no').value;
-            let r = await fetch(URL+'/pairing', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({nomor:n})});
-            let d = await r.json();
-            document.getElementById('res').innerText = "CODE: " + d.code;
-        }
+    async function pair() {
+        let n = document.getElementById('no').value;
+        let r = await fetch(URL+'/pairing', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({nomor:n})});
+        let d = await r.json();
+        document.getElementById('res').innerText = "CODE: " + d.code;
+    }
 
-        async function kirim() {
-            let n = document.getElementById('target').value;
-            let p = document.getElementById('pesan').value;
-            await fetch(URL+'/send', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({nomor:n, pesan:p})});
-            alert("Terkirim");
-        }
-    </script>
+    async function kirim() {
+        let n = document.getElementById('target').value;
+        let p = document.getElementById('pesan').value;
+        await fetch(URL+'/send', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({nomor:n, pesan:p})});
+        alert("Pesan berhasil dikirim!");
+    }
+</script>
 </body>
 </html>
